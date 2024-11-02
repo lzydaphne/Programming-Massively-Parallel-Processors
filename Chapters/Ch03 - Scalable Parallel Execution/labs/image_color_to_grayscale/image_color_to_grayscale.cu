@@ -19,19 +19,24 @@
 __global__
 void color_to_grayscale_conversion(unsigned char* in, unsigned char* out, int width, int height){
 
+    // Calculate the row and column of the current thread
     int row = blockIdx.y * blockDim.y + threadIdx.y;
     int col = blockIdx.x * blockDim.x + threadIdx.x;
 
+    // Check if the thread is within the image boundaries
     if(row < 0 || row >= height || col < 0 || col >= width) return;
-
+    
+    // Calculate the offset for the grayscale and RGB values
     int grey_offset = row * width + col;
-
+    // one can think of RGB image having CHANNEL times more "columns" than the grayscale image (here we flatten the 2D image to 1D)
     int rgb_offset = grey_offset * NUM_CHANNELS;
 
+    // Extract the RGB values from the input image
     unsigned char r = in[rgb_offset + 0];
     unsigned char g = in[rgb_offset + 1];
     unsigned char b = in[rgb_offset + 2];
 
+    // Convert the RGB values to grayscale and store in the output image
     out[grey_offset] = (unsigned char)(0.21f * r + 0.71f * g + 0.07f * b);
 }
 
@@ -62,7 +67,8 @@ int main(int argc, char* argv[]){
     cudaMalloc((void**) &d_input_image, NUM_CHANNELS * size * sizeof(unsigned char));
     cudaMalloc((void**) &d_output_image, size * sizeof(unsigned char));
 
-    // Initialize the input image with random values between 0 and 255
+    // Initialize the input image with random values between 0 and 255, unsigned char
+    // each pixel has 3 channels: R, G, B, represent as 3 consecutive chars
     srand(time(NULL));
     for(int i = 0; i < NUM_CHANNELS * size; ++i)
         h_input_image[i] = rand() % 256;

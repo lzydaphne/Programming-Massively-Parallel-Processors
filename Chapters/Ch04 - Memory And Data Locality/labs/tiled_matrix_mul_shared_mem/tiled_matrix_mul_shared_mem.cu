@@ -10,17 +10,19 @@
  * 
  *  Compile with:
  *      nvcc tiled_matrix_mul_shared_mem.cu
- * 
+ * cd /home/lzydaphne/Programming-Massively-Parallel-Processors/Chapters/"Ch04 - Memory And Data Locality/labs/tiled_matrix_mul_shared_mem"
  *  Run with:
  *     ./a.out <num_rows_A> <num_columns_A> <num_rows_B> <num_columns_B>
+ * ./tiled_matrix_mul_shared_mem 4 4 4 4
  * 
 /*/
 
 #include <stdio.h>
+#include <math.h>
 
 #define DEBUG
 
-#define TILE_WIDTH 16
+#define TILE_WIDTH 2
 
 // Compute C = A * B
 __global__ void matrix_mul(float *A, float *B, float *C,
@@ -35,6 +37,7 @@ __global__ void matrix_mul(float *A, float *B, float *C,
     int bx = blockIdx.x, by = blockIdx.y;
     int tx = threadIdx.x, ty = threadIdx.y;
 
+    // thread to output element (row,col) in C mapping    
     int row = by * TILE_WIDTH + ty;
     int col = bx * TILE_WIDTH + tx;
 
@@ -70,6 +73,22 @@ __global__ void matrix_mul(float *A, float *B, float *C,
         C[row * num_cols_C + col] = Pvalue;
 }
 
+// Function to check the correctness of the output
+void check_result(float *hostC, float *hostA, float *hostB, int numARows, int numAColumns, int numBColumns) {
+    for (int i = 0; i < numARows; i++) {
+        for (int j = 0; j < numBColumns; j++) {
+            float expected = 0;
+            for (int k = 0; k < numAColumns; k++) {
+                expected += hostA[i * numAColumns + k] * hostB[k * numBColumns + j];
+            }
+            if (fabs(hostC[i * numBColumns + j] - expected) > 1e-5) {
+                printf("Mismatch at C[%d][%d]: Expected %f, Got %f\n", i, j, expected, hostC[i * numBColumns + j]);
+                return;
+            }
+        }
+    }
+    printf("Results are correct!\n");
+}
 
 int main(int argc, char **argv) {
 
@@ -143,6 +162,8 @@ int main(int argc, char **argv) {
     // Launch kernel
     dim3 blockDim(TILE_WIDTH, TILE_WIDTH);
     dim3 gridDim(ceil((float)numCColumns / blockDim.x), ceil((float)numCRows / blockDim.y));
+    printf("Block size: %d x %d\n", blockDim.x, blockDim.y);
+    printf("Grid size: %d x %d\n", gridDim.x, gridDim.y);
     matrix_mul<<<gridDim, blockDim>>>(deviceA, deviceB, deviceC,
                                       numARows, numAColumns,
                                       numBRows, numBColumns,
@@ -150,6 +171,9 @@ int main(int argc, char **argv) {
 
     // Copy device memory to host
     cudaMemcpy(hostC, deviceC, numCRows * numCColumns * sizeof(float), cudaMemcpyDeviceToHost);
+
+    // Check the result
+    check_result(hostC, hostA, hostB, numARows, numAColumns, numBColumns);
 
 #ifdef DEBUG
     // Print results
@@ -172,3 +196,4 @@ int main(int argc, char **argv) {
 
     return 0;
 }
+

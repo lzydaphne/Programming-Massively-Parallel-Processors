@@ -16,7 +16,7 @@
 
 #define DEBUG
 
-#define BLUR_SIZE 1
+#define BLUR_SIZE 3
 
 __global__
 void blur_kernel(unsigned char* in, unsigned char* out, int width, int height){
@@ -42,7 +42,7 @@ void blur_kernel(unsigned char* in, unsigned char* out, int width, int height){
             ++pixels; // Count the number of pixel values that have been added
         }
     }
-    // printf("%d %d\n", pixVal, pixels);
+    printf("%d %d\n", pixVal, pixels);
     // Write out the result for this pixel
     out[row * width + col] = (unsigned char) ((float)pixVal / pixels);
 }

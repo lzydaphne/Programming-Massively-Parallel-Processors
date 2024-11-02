@@ -1,0 +1,5 @@
+Launching kernel with grid(1,2) block(2,2)
+Kernel execution time: 0.024352 ms
+Computing CPU result for verification...
+Test PASSED
+Performance: 0.01 GFLOPS

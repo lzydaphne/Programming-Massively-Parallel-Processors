@@ -1,7 +1,8 @@
-
+// nvcc -o convolution convolution.cu
+// ./convolution 4 4 3
 #include <stdio.h>
 
-#define DEBUG
+#define DEBUG 1
 
 
 #define Mask_width 5

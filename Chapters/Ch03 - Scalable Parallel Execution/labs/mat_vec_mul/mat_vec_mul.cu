@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <cuda.h>
 
-//#define DEBUG
+#define DEBUG 1
 
 
 __global__
@@ -41,10 +41,10 @@ int main(int argc, char **argv)
     // Initialize host memory
     for (int i = 0; i < n; i++)
     {
-        h_C[i] = 1;
+        h_C[i] = 2;
         for (int j = 0; j < n; j++)
         {
-            h_B[i * n + j] = 1;
+            h_B[i * n + j] = 3;
         }
     }
 
