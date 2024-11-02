@@ -1,6 +1,6 @@
 /*
-nvcc -o conv2d_basic conv2d_basic.cu
-./conv2d_basic
+nvcc -o conv2d_tiled conv2d_tiled.cu
+./conv2d_tiled
 */
 #include <cuda_runtime.h>
 #include <stdio.h>
@@ -22,8 +22,14 @@ __constant__ float Filter[2*FILTER_RADIUS+1][2*FILTER_RADIUS+1];
 
 __global__ void convolution_tiled_2D_const_mem_kernel(float *N, float *P,
                                                     int width, int height) {
-    int col = blockIdx.x*OUT_TILE_DIM + threadIdx.x - FILTER_RADIUS;
-    int row = blockIdx.y*OUT_TILE_DIM + threadIdx.y - FILTER_RADIUS;
+
+    //Active thread (tx, ty) will calculate output element (tx - FILTER_RADIUS,ty - FILTER_RADIUS) using a patch of input tile elements whose upper-left corner is element (tx -FILTER_RADIUS,ty-FILTER_RADIUS) of the input tile. 
+    int tileRow = threadIdx.y - FILTER_RADIUS;
+    int tileCol = threadIdx.x - FILTER_RADIUS;
+
+    // index of output element assigned to each active thread
+    int row = blockIdx.y*OUT_TILE_DIM + tileRow;
+    int col = blockIdx.x*OUT_TILE_DIM + tileCol;
     
     // Loading input tile
     __shared__ float N_s[IN_TILE_DIM][IN_TILE_DIM];
@@ -36,12 +42,9 @@ __global__ void convolution_tiled_2D_const_mem_kernel(float *N, float *P,
     
     __syncthreads();
     
-    // Calculating output elements
-    int tileCol = threadIdx.x - FILTER_RADIUS;
-    int tileRow = threadIdx.y - FILTER_RADIUS;
     
-    // turning off the threads at the edges of the block
     if (col >= 0 && col < width && row >= 0 && row < height) {
+        // turning off the threads at the edges of the block
         if (tileCol>=0 && tileCol<OUT_TILE_DIM && tileRow>=0 && tileRow<OUT_TILE_DIM) {
             float Pvalue = 0.0f;
             for (int fRow = 0; fRow < 2*FILTER_RADIUS+1; fRow++) {
