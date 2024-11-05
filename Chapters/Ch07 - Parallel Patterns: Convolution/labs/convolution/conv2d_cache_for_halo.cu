@@ -44,8 +44,9 @@ __global__ void convolution_cached_tiled_2D_const_mem_kernel(float *N, float *P,
     for (int fRow = 0; fRow < 2 * FILTER_RADIUS + 1; fRow++) {
       for (int fCol = 0; fCol < 2 * FILTER_RADIUS + 1; fCol++) {
         // calulating elements in shared memory, check for halo cells
-        // tests whether the input element falls within the interior of the input tile.
+        // tests whether the input element falls within the interior of the input tile(same size as output tile).
         // If it does, the element is read from shared memory.
+        // ty,tx: index in the input tile
         int ty = threadIdx.y - FILTER_RADIUS + fRow;
         int tx = threadIdx.x - FILTER_RADIUS + fCol;
         
